@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your POD Store - Open for Business! 🚀</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 40px 0; }
+        .header h1 { font-size: 3rem; margin-bottom: 10px; }
+        .header p { font-size: 1.2rem; opacity: 0.9; }
+        .card { 
+            background: rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px);
+            border-radius: 15px; 
+            padding: 30px; 
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn {
+            background: #e74c3c;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background: #c0392b; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 20px; 
+            margin: 30px 0;
+        }
+        .product-card {
+            background: white;
+            color: #333;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success { background: #27ae60; }
+        .error { background: #e74c3c; }
+        .loading { background: #f39c12; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 Your POD Store</h1>
+            <p>Fully Automated Print-on-Demand Business</p>
+            <p><strong>Cost: $0/month • Ready to Make Money! 💰</strong></p>
+        </div>
+
+        <div class="card">
+            <h2>🚀 Business Control Panel</h2>
+            <div class="grid">
+                <button class="btn" onclick="testAPI()">Test API Connection</button>
+                <button class="btn" onclick="testPrintify()">Test Printify Manufacturing</button>
+                <button class="btn" onclick="loadProducts()">Load Products</button>
+                <button class="btn" onclick="openPrintify()">Open Printify Dashboard</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Business Status</h2>
+            <div id="results"></div>
+        </div>
+
+        <div class="card">
+            <h2>🛍️ Available Products</h2>
+            <div id="products" class="grid"></div>
+        </div>
+
+        <div class="card">
+            <h2>🎯 Quick Start Guide</h2>
+            <ol style="text-align: left; line-height: 2;">
+                <li><strong>Test your connections</strong> using buttons above</li>
+                <li><strong>Create products</strong> in Printify dashboard</li>
+                <li><strong>Set your prices</strong> (2.5x cost + $5 = profit)</li>
+                <li><strong>Share your store URL</strong> to start selling!</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/.netlify/functions/api';
+        
+        async function testAPI() {
+            showStatus('Testing API connection...', 'loading');
+            try {
+                const response = await fetch(API_BASE);
+                const data = await response.json();
+                showStatus(`✅ API Working: ${data.message}`, 'success');
+            } catch (error) {
+                showStatus(`❌ API Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPrintify() {
+            showStatus('Testing Printify manufacturing...', 'loading');
+            try {
+                const response = await fetch(API_BASE + '/printify-test');
+                const data = await response.json();
+                if (data.success) {
+                    showStatus(`🎉 ${data.message} (${data.shops.length} shops)`, 'success');
+                } else {
+                    showStatus(`❌ Printify Failed: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Connection Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadProducts() {
+            showStatus('Loading available products...', 'loading');
+            try {
+                const response = await fetch(API_BASE + '/products/catalog');
+                const data = await response.json();
+                if (data.success) {
+                    displayProducts(data.products);
+                    showStatus(`✅ Loaded ${data.products.length} products`, 'success');
+                } else {
+                    showStatus(`❌ Failed to load products: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function displayProducts(products) {
+            const container = document.getElementById('products');
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <h3>${product.title}</h3>
+                    <p>Brand: ${product.brand}</p>
+                    <p>Model: ${product.model}</p>
+                    <p style="color: #e74c3c; font-weight: bold; margin-top: 10px;">
+                        Cost: $${(product.variants[0]?.price || 10).toFixed(2)}
+                    </p>
+                    <p style="color: #27ae60; font-weight: bold;">
+                        Sell for: $${((product.variants[0]?.price || 10) * 2.5 + 5).toFixed(2)}
+                    </p>
+                </div>
+            `).join('');
+        }
+
+        function showStatus(message, type) {
+            const results = document.getElementById('results');
+            results.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function openPrintify() {
+            window.open('https://printify.com', '_blank');
+        }
+
+        // Auto-test on load
+        setTimeout(testAPI, 1000);
+        setTimeout(testPrintify, 2000);
+    </script>
+</body>
+  </html>
